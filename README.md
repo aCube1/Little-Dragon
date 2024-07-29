@@ -26,12 +26,12 @@ Little-Dragon/
 ├── assets/
 │ ├── sprites/
 │ ├── audio/
-│ ├── scripts/
-│ ├── scenes/
 │ └── fonts/
 ├── .import/
 ├── .godot/
 ├── .gitignore
+├── scripts/
+├── scenes/
 ├── project.godot
 └── README.md
 ```
