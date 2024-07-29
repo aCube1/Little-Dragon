@@ -41,9 +41,3 @@ Tasks are organized in Trello. Make sure to check the task board regularly for u
 
 ## Documentation
 All project documentation, including game design, art, and marketing documents, is available on Google Drive. Visit the link above to view and edit the documents as needed.
-
-## Contribute
-Clone the repository:
-```bash
-git clone github.com/Ultraviolet-Games/Little-Dragon
-```
