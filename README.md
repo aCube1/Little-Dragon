@@ -1,34 +1,34 @@
 # Little Dragon
 
-Bem-vindo ao repositório de desenvolvimento do Little Dragon, um jogo 2D de plataforma. Este README contém informações importantes para a equipe de desenvolvimento.
+Welcome to the development repository for Little Dragon, a 2D platformer game. This README contains important information for the development team.
 
-## Visão Geral
+## Overview
 
-Little Dragon é um jogo de plataforma em 2D onde o jogador controla um dragãozinho em sua jornada épica. Nosso objetivo é criar uma experiência envolvente e divertida, combinando gráficos de alta qualidade com uma jogabilidade desafiadora.
+Little Dragon is a 2D platformer game where the player controls a little dragon on his epic journey. Our goal is to create an immersive and fun experience, combining high-quality graphics with challenging gameplay.
 
-## Links Importantes
+## Important Links
 
-- **Trello**: [Quadro de Tarefas](https://trello.com/b/8kNSbcEw/little-dragon)
-- **Google Drive**: [Documentos e Recursos](https://drive.google.com/drive/folders/1eQoWWKVc2cAUAaX342KSGOvgt7Lj-N16)
+- **Trello**: [Task Board](https://trello.com/b/8kNSbcEw/little-dragon)
+- **Google Drive**: [Documents and Resources](https://drive.google.com/drive/folders/1eQoWWKVc2cAUAaX342KSGOvgt7Lj-N16)
 
-## Equipe de Desenvolvimento
+## Development Team
 
-- **Press** (Dono do Projeto) - Escreve os documentos de game design, monta o jogo na engine e programa os sistemas de gameplay.
-- **Johny** (Roteirista) - Cria a história do jogo, desenvolve sprites 2D em pixel art e segue as direções de Press.
-- **Tony** (Diretor de Marketing) - Gerencia as contas da empresa, mantém a comunidade ativa e lidera a equipe de arte e roteiro quando necessário.
-- **Nick** (Artista 2D) - Cria artes em linearte e artes conceituais.
-- **ACube** (Programador) - Desenvolve sistemas complexos e revisa o código do jogo.
+- **Press** (Project Owner) - Writes game design documents, builds the game in the engine, and programs gameplay systems.
+- **Johny** (Scriptwriter) - Creates the game's story, develops 2D pixel art sprites, and follows Press's directions.
+- **Tony** (Marketing Director) - Manages the company's accounts, keeps the community active, and leads the art and script team when needed.
+- **Nick** (2D Artist) - Creates lineart and concept art.
+- **ACube** (Programmer) - Develops complex systems and reviews game code.
 
-## Estrutura do Projeto
+## Project Structure
 
 ```plaintext
 Little-Dragon/
 ├── assets/
-│   ├── sprites/
-│   ├── audio/
-│   ├── scripts/
-│   ├── scenes/
-│   └── fonts/
+│ ├── sprites/
+│ ├── audio/
+│ ├── scripts/
+│ ├── scenes/
+│ └── fonts/
 ├── .import/
 ├── .godot/
 ├── .gitignore
@@ -36,14 +36,14 @@ Little-Dragon/
 └── README.md
 ```
 
-## Tarefas
-As tarefas estão organizadas no Trello. Certifique-se de verificar regularmente o quadro de tarefas para atualizações e novas atribuições.
+## Tasks
+Tasks are organized in Trello. Make sure to check the task board regularly for updates and new assignments.
 
-## Documentação
-Toda a documentação do projeto, incluindo documentos de design de jogo, arte e marketing, está disponível no Google Drive. Acesse o link acima para visualizar e editar os documentos conforme necessário.
+## Documentation
+All project documentation, including game design, art, and marketing documents, is available on Google Drive. Visit the link above to view and edit the documents as needed.
 
-## Contribuição
-Clone o repositório:
+## Contribute
+Clone the repository:
 ```bash
 git clone github.com/Ultraviolet-Games/Little-Dragon
 ```
