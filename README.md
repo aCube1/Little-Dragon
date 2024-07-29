@@ -42,8 +42,50 @@ As tarefas estão organizadas no Trello. Certifique-se de verificar regularmente
 ## Documentação
 Toda a documentação do projeto, incluindo documentos de design de jogo, arte e marketing, está disponível no Google Drive. Acesse o link acima para visualizar e editar os documentos conforme necessário.
 
-## Contribuição
-Clone o repositório:
-```bash
-git clone github.com/Ultraviolet-Games/Little-Dragon
-```
+# Contribuindo para o Projeto
+
+## Como Contribuir
+
+1. **Faça um Fork do Repositório**
+   - Clique no botão **Fork** no canto superior direito da página do repositório.
+
+2. **Clone o Fork para Seu Computador**
+   - Abra o terminal e execute:
+     ```bash
+     git clone https://github.com/seu-usuario/nome-do-repositorio.git
+     ```
+
+3. **Crie uma Branch para Sua Modificação**
+   - Navegue para o diretório do projeto:
+     ```bash
+     cd nome-do-repositorio
+     ```
+   - Crie e mude para uma nova branch:
+     ```bash
+     git checkout -b feature/nome-da-feature
+     ```
+
+4. **Faça as Alterações e Commit**
+   - Adicione suas alterações:
+     ```bash
+     git add .
+     ```
+   - Faça o commit das suas alterações:
+     ```bash
+     git commit -m "Descrição clara do que foi feito"
+     ```
+
+5. **Envie as Alterações para Seu Fork**
+   - Envie sua branch para o GitHub:
+     ```bash
+     git push origin feature/nome-da-feature
+     ```
+
+6. **Abra um Pull Request**
+   - Vá para o repositório original no GitHub.
+   - Clique em **Pull Requests** e depois em **New Pull Request**.
+   - Selecione a branch do seu fork e compare com a branch /develop do repositório principal.
+   - Descreva suas mudanças e envie o Pull Request.
+
+Obrigado por contribuir!
+
