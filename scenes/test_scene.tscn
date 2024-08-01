@@ -19,3 +19,6 @@ position = Vector2(552, 859)
 
 [node name="StaticBody2D2" parent="." instance=ExtResource("2_hcqpe")]
 position = Vector2(932, 390)
+
+[node name="StaticBody2D3" parent="." instance=ExtResource("2_hcqpe")]
+position = Vector2(44, 651)
