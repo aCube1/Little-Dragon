@@ -6,7 +6,7 @@
 [node name="Node2D" type="Node2D"]
 
 [node name="Player" parent="." instance=ExtResource("1_f6tan")]
-position = Vector2(562, 166)
+position = Vector2(558, 166)
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
 limit_left = 0
@@ -15,7 +15,7 @@ editor_draw_limits = true
 editor_draw_drag_margin = true
 
 [node name="StaticBody2D" parent="." instance=ExtResource("2_hcqpe")]
-position = Vector2(556, 859)
+position = Vector2(552, 859)
 
 [node name="StaticBody2D2" parent="." instance=ExtResource("2_hcqpe")]
-position = Vector2(936, 390)
+position = Vector2(932, 390)
