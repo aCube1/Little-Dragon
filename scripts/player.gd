@@ -6,6 +6,8 @@ var scale_alteration:float = 100
 
 var PAUSED:bool = false
 
+const JUMP_BUTTON_NAME:String = "ui_accept"
+
 @export_group("Walk")
 @export var SPEED:float = 300.0
 
@@ -15,11 +17,16 @@ var PAUSED:bool = false
 @export var COYOTE_TIME:float = .25
 @export var JUMP_TIME:float = .35
 
+@export_group("Dash")
+@export var DASH_GROUND: float = 600.0
+@export var DASH_AIR_SIDE: float = 800.0
+@export var DASH_AIR_UP: float = 700.0
+
 # Get the gravity from the project settings to be synced with RigidBody nodes.
 var gravity:float = ProjectSettings.get_setting("physics/2d/default_gravity")
 var coyote_jump:bool = false
 var jumps:int = 0
-var jump_button:bool = false
+var jump_button_pressed:bool = false
 
 @onready var _coyote_timer : Timer
 @onready var _jump_timer : Timer
@@ -97,30 +104,31 @@ func _jump_controller():
 	else:
 		jumps = 0
 		coyote_jump = false
-
 	
 	# calculate if player can jump by coyote time or in floor or extra-jump
 	var can_jump:bool = ((_coyote_timer != null and _coyote_timer.time_left > 0) or 
 		is_on_floor() or (jumps != 0 and jumps < DOUBLE_JUMP))
 	
-	if _coyote_timer != null:
-		print(_coyote_timer.time_left)
-	
-	if Input.is_action_just_pressed("ui_accept"):
+	# player press jump button
+	if Input.is_action_just_pressed(JUMP_BUTTON_NAME):
 		if can_jump:	
+			# reset coyote timer
 			_stop_coyote_timer()
 			coyote_jump = true
 			can_jump = false
+			
+			# counts jumps
 			jumps += 1
 
+			# start jump impulse timer
 			_start_jump_timer()
-			jump_button = true
+			jump_button_pressed= true
 
-	if Input.is_action_just_released("ui_accept") or (_jump_timer != null and _jump_timer.time_left <= 0):
-		jump_button = false
+	# player release jump button
+	if Input.is_action_just_released(JUMP_BUTTON_NAME) or (_jump_timer != null and _jump_timer.time_left <= 0):
+		jump_button_pressed = false
 		_stop_jump_timer()
 	
-	# Handle jump
-	if jump_button:
+	# Apply jump
+	if jump_button_pressed:
 		velocity.y = JUMP_VELOCITY
-		
