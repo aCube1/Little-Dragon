@@ -1,14 +1,10 @@
 class_name Player
 extends CharacterBody2D
 
-# Ground states
+# Player movement states
 enum {
 	ST_IDLE,
 	ST_WALK,
-}
-
-# Air states
-enum {
 	ST_FALL,
 	ST_JUMP,
 }
@@ -41,7 +37,7 @@ var _was_on_floor := false
 
 @onready var _jump_impulse := (jump_height * -2.0) / ascent_time
 @onready var _jump_gravity := (jump_height * 2.0) / (descent_time ** 2)
-@onready var _gravity := (jump_height * 2.0) / (ascent_time ** 2)
+@onready var _fall_gravity := (jump_height * 2.0) / (ascent_time ** 2)
 
 @onready var _coyote_timer: SceneTreeTimer
 @onready var _jumpbuf_timer: SceneTreeTimer
@@ -63,88 +59,88 @@ func _physics_process(delta: float) -> void:
 	if _is_paused:
 		return
 
-	_update_ground(delta)
-	_update_air(delta)
+	_handle_ground_state(delta)
+	_handle_air_state(delta)
 
 	move_and_slide()
 
-	if is_on_floor():
-		_rem_jumps = max_jumps
-		_is_jumping = false
-		_was_on_floor = true
-		_coyote_timer = null
 
-
-func _update_ground(delta: float) -> void:
-	if is_zero_approx(_dir):
+func _handle_ground_state(delta: float) -> void:
+	if signf(_dir) == 0:
 		_ground_state = ST_IDLE
 	else:
 		_ground_state = ST_WALK
 
 	match _ground_state:
 		ST_IDLE:
-			velocity.x = move_toward(velocity.x, 0.0, max_speed * delta)
+			velocity.x = move_toward(velocity.x, 0.0, max_speed * 2.0 * delta)
 		ST_WALK:
 			# Fix player slipping behavior
 			var accel := max_speed
 			if signf(_dir) != signf(get_last_motion().x):
 				accel *= 4.0
 
-			velocity.x += accel * _dir * delta
+			velocity.x += accel * signf(_dir) * delta
 			velocity.x = clamp(velocity.x, -max_speed, max_speed)
 
 
-func _update_air(delta: float) -> void:
-	if is_on_floor() and not _is_jump_buffered():
-		_air_state = ST_FALL
-
-	if _is_jumping or _is_jump_buffered():
-		_air_state = ST_JUMP
-
+func _handle_air_state(delta: float) -> void:
 	match _air_state:
+		ST_IDLE:
+			if is_on_floor():
+				_rem_jumps = max_jumps
+				_was_on_floor = true
+			else:
+				# If the player was on the floor, is not jumping and can do the coyote time
+				# have mercy and let it jump for a brief time
+				if _was_on_floor:
+					_coyote_timer = get_tree().create_timer(coyote_time)
+					_was_on_floor = false
+
+				if not _is_coyotetimer_running():
+					_air_state = ST_FALL
+
+			if (is_on_floor() or _is_coyotetimer_running()) \
+			and (_is_jumping or _is_jump_buffered()):
+					_air_state = ST_JUMP
 		ST_FALL:
-			_apply_gravity(delta)
+			_apply_gravity(_fall_gravity, delta)
+			_coyote_timer = null
+
+			if _is_jumping:
+				_air_state = ST_JUMP
+			elif is_on_floor():
+				_air_state = ST_IDLE
 		ST_JUMP:
-			_do_jump(delta)
+			_apply_gravity(_jump_gravity, delta)
+			if _is_jumping or _is_jump_buffered():
+				_do_jump()
+				_is_jumping = false
+				_coyote_timer = null
+
+			# If the player stop holding the Jump Button, let it fall from current height
+			if _cut_jump:
+				velocity.y /= 2
+				_cut_jump = false
+
+			if velocity.y > 0.0:
+				_air_state = ST_FALL
 
 
-func _apply_gravity(delta: float) -> void:
-	if _is_coyotetimer_running():
-		return
-
-	velocity.y += _gravity * delta
-
-	# If the player was on the floor, is not jumping and can do the coyote time
-	# have mercy and let it jump for a brief time
-	if _was_on_floor and not is_on_floor():
-		_coyote_timer = get_tree().create_timer(coyote_time, false, true)
-		_was_on_floor = false
-		velocity.y = 0.0 # Reset gravity to let the player jump
+func _apply_gravity(gravity: float, delta: float) -> void:
+	velocity.y += gravity * delta
 
 
-func _do_jump(delta: float) -> void:
-	velocity.y += _jump_gravity * delta
-
-	if _is_jumping or _is_jump_buffered():
-		# Allow player jump mid-air if there are remaing jumps to use
-		var has_jumps := _rem_jumps > 0 and _rem_jumps <= max_jumps
-
-		# Only allow player to jump if is on floor, or it has jumps left
-		# or the coyote is timing
-		if is_on_floor() or has_jumps or _is_coyotetimer_running():
-			velocity.y = _jump_impulse
-			_rem_jumps -= 1
-			_jumpbuf_timer = null
-		elif not _is_jump_buffered():
-			_jumpbuf_timer = get_tree().create_timer(jumpbuffer_time)
-
-		_is_jumping = false
-		_coyote_timer = null # Destroy the timer, we don't need it anymore
-
-	# If the player stop holding the Jump Button, let it fall from current height
-	if _cut_jump:
-		velocity.y /= 2
-		_cut_jump = false
+func _do_jump() -> void:
+	# Only allow player to jump if is on floor, or it has jumps left
+	# or the coyote is timing
+	var has_jumps := _rem_jumps > 0 and _rem_jumps <= max_jumps
+	if is_on_floor() or has_jumps or _is_coyotetimer_running():
+		velocity.y = _jump_impulse
+		_rem_jumps -= 1
+		_jumpbuf_timer = null
+	elif not _is_jump_buffered():
+		_jumpbuf_timer = get_tree().create_timer(jumpbuffer_time)
 
 
 func _is_coyotetimer_running() -> bool:
