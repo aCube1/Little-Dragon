@@ -10,6 +10,9 @@ enum {
 	ST_DASH,
 }
 
+# Amount of pixels to test while try to correct corner
+const _CORRECTION_AMOUNT := 8
+
 @export_group("Ground")
 @export var max_speed := 300.0
 @export_range(0.001, 1.0) var accel_time := 0.6
@@ -82,6 +85,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 
+
 func _handle_ground_state(delta: float) -> void:
 	match _ground_state:
 		ST_IDLE:
@@ -110,6 +114,7 @@ func _handle_ground_state(delta: float) -> void:
 				_is_dashing = false
 
 			_apply_friction(_dash_friction, delta)
+			_try_corner_correct(delta, true) # Try to not let the player clash onto a wall
 
 			if velocity.x == 0.0:
 				_dash_delay_timer = null
@@ -167,6 +172,8 @@ func _handle_air_state(delta: float) -> void:
 				velocity.y /= 2
 				_cut_jump = false
 
+			_try_corner_correct(delta, false) # Try to not let the player bump the head
+
 			if _is_dashing:
 				_air_state = ST_DASH
 			elif velocity.y > 0.0:
@@ -201,6 +208,27 @@ func _do_dash() -> void:
 		velocity.x = _dash_impulse * _prev_dir
 		_rem_dashs -= 1
 		_dash_delay_timer = get_tree().create_timer(dash_cooldown_time)
+
+
+func _try_corner_correct(delta: float, horizontal: bool) -> void:
+	var relative_vel := Vector2(0.0, velocity.y * delta)
+	if horizontal:
+		relative_vel = Vector2(velocity.x * delta, 0.0)
+
+	if not test_move(global_transform, relative_vel):
+		return # Seems like the next frames will not make the playr collide
+
+	for i in range(1, _CORRECTION_AMOUNT * 2 + 1):
+		for j in [-1.0, 1.0]:
+			# If 'horizontal' is true, the correction is done on the Horizontal Axis
+			var translation := Vector2(i * j / 2, 0.0)
+			if horizontal:
+				translation = Vector2(0.0, i * j / 2)
+
+			# Try to find an empty spot to put the player on
+			if not test_move(global_transform.translated(translation), relative_vel):
+				translate(translation)
+				return
 
 
 func _is_timer_running(timer: SceneTreeTimer) -> bool:
