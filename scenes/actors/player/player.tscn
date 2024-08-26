@@ -52,29 +52,17 @@ script = ExtResource("5_dwgrk")
 [node name="StateMachine" type="Node" parent="."]
 script = ExtResource("3_f8k5p")
 
-[node name="OnIdle" type="Node" parent="StateMachine" node_paths=PackedStringArray("_movement")]
+[node name="OnIdle" type="Node" parent="StateMachine"]
 script = ExtResource("6_ngji1")
-_movement = NodePath("../../MovementComponent")
 
-[node name="OnWalk" type="Node" parent="StateMachine" node_paths=PackedStringArray("_controller", "_movement")]
+[node name="OnWalk" type="Node" parent="StateMachine"]
 script = ExtResource("7_wbyc1")
-_controller = NodePath("../../PlayerController")
-_movement = NodePath("../../MovementComponent")
 
-[node name="OnFall" type="Node" parent="StateMachine" node_paths=PackedStringArray("_controller", "_movement", "_jump")]
+[node name="OnFall" type="Node" parent="StateMachine"]
 script = ExtResource("9_guyyn")
-_controller = NodePath("../../PlayerController")
-_movement = NodePath("../../MovementComponent")
-_jump = NodePath("../../JumpComponent")
 
-[node name="OnJump" type="Node" parent="StateMachine" node_paths=PackedStringArray("_controller", "_movement", "_jump")]
+[node name="OnJump" type="Node" parent="StateMachine"]
 script = ExtResource("10_84s2a")
-_controller = NodePath("../../PlayerController")
-_movement = NodePath("../../MovementComponent")
-_jump = NodePath("../../JumpComponent")
 
-[node name="OnDash" type="Node" parent="StateMachine" node_paths=PackedStringArray("_controller", "_dash", "_jump")]
+[node name="OnDash" type="Node" parent="StateMachine"]
 script = ExtResource("8_bqf0a")
-_controller = NodePath("../../PlayerController")
-_dash = NodePath("../../DashComponent")
-_jump = NodePath("../../JumpComponent")

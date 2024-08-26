@@ -13,6 +13,10 @@ var _has_jumped: bool
 var _has_stopped_jump: bool
 
 
+func _enter_tree() -> void:
+	owner.set_meta(&"Controller", self)
+
+
 func _input(event: InputEvent) -> void:
 	direction = Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	direction = direction.sign() # This is to prevent non Integer directions

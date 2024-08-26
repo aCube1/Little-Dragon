@@ -1,12 +1,12 @@
 extends BaseState
 
-@export var _controller: PlayerController
-@export var _movement: MovementComponent
+var _controller: PlayerController
+var _movement: MovementComponent
 
 
 func _ready() -> void:
-	assert(_controller != null, "Controller Component isn't attached!")
-	assert(_movement != null, "Movement Component isn't attached!")
+	_controller = owner.get_meta(&"Controller")
+	_movement = owner.get_meta(&"MovementComponent")
 
 
 func _exit() -> Dictionary:

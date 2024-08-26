@@ -1,12 +1,12 @@
 extends BaseState
 
-@export var _movement: MovementComponent
 
+var _movement: MovementComponent
 var _was_on_floor: bool
 
 
 func _ready() -> void:
-	assert(_movement != null, "Movement Component isn't attached!")
+	_movement = owner.get_meta(&"MovementComponent")
 
 
 func _enter(_msg: Dictionary) -> void:

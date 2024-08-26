@@ -28,6 +28,10 @@ var _jumpbuf_timer: SceneTreeTimer
 @onready var _fall_gravity := (jump_height * 2.0) / (descent_time ** 2.0)
 
 
+func _enter_tree() -> void:
+	owner.set_meta(&"JumpComponent", self)
+
+
 func _ready() -> void:
 	assert(owner is CharacterBody2D, "Component owner is not a CharacterBody2D")
 

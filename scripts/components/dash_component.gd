@@ -12,6 +12,10 @@ var _rem_dashs := max_dashs
 @onready var _dash_stopper := (dash_distance * 2.0) / (dash_stop_time ** 2.0)
 
 
+func _enter_tree() -> void:
+	owner.set_meta(&"DashComponent", self)
+
+
 func _ready() -> void:
 	assert(owner is CharacterBody2D, "Component owner is not a CharacterBody2D")
 

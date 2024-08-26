@@ -10,6 +10,10 @@ extends Node
 @onready var _acceleration := (max_speed * 2.0) / (accel_time ** 2.0)
 
 
+func _enter_tree() -> void:
+	owner.set_meta(&"MovementComponent", self)
+
+
 func _ready() -> void:
 	assert(owner is CharacterBody2D, "Component owner is not a CharacterBody2D")
 
