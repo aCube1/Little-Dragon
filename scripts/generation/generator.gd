@@ -6,6 +6,7 @@ signal step_completed(map: PackedInt32Array, rooms: PackedInt32Array)
 
 # Room data
 enum {
+	CELL_INVALID = -2,
 	CELL_EMPTY = -1,
 	CELL_VISITED = 0,
 
@@ -17,7 +18,7 @@ enum {
 }
 
 const _GIVEUP_CHANCE := 0.3
-const _MAX_RESEED_TRIES := 4
+const _MAX_FAILS := 3
 
 @export var map_size: Vector2i
 @export var max_rooms: int = 16
@@ -27,32 +28,24 @@ var _rooms: PackedInt32Array # Valid visited rooms
 var _stack: Array[int]
 
 var _is_generating := false
-var _stack_next := 0 # Next index in the 'rooms' array to push into stack
-var _reseed_tries: int = 0 # How many failed reseeds were tried
-var _start_cell: int # The cell where the generation starts
+var _fails_count := 0
+var _start_cell: int
 
 func _process(_delta: float) -> void:
 	if not _is_generating:
 		return # Do nothing while we are not generating
 
-	# If the stack is empty, reseed a random registered cell or the
-	# start cell into stack
+	# If the stack is empty, reseed registered cells and push it neighbours
 	if _stack.is_empty():
-		if not _rooms.is_empty():
-			# Try to find next cell to continue iteration
-			_push_neighbours(_rooms[_stack_next])
-			_stack_next += 1
-			if _stack_next >= _rooms.size():
-				_stack_next = 0
-				_reseed_tries += 1
-		else:
-			_stack.push_back(_start_cell)
+		_fails_count += 1
+		for room in _rooms:
+			_push_neighbours(room)
 
 	_visit_cell()
 
 	# Stop generation if we reach the maximum rooms count, or reached
 	# maximum reseed tries
-	if _rooms.size() >= max_rooms or _reseed_tries >= _MAX_RESEED_TRIES:
+	if _rooms.size() >= max_rooms or _fails_count >= _MAX_FAILS:
 		generation_finished.emit(_map.duplicate(), _rooms.duplicate())
 		_is_generating = false
 
@@ -78,23 +71,18 @@ func start_generation() -> void:
 	_stack.clear()
 
 	_is_generating = true
-	_stack_next = 0
-	_reseed_tries = 0
 	_start_cell = _get_index(Vector2i(
 		randi_range(1, map_size.x - 2),
 		randi_range(1, map_size.y - 2)
 	))
+	_stack.push_back(_start_cell)
 
 
 # Visit cell, add neighbour rooms to the stack, then register room
 # as visited and store it
 func _visit_cell() -> void:
 	var next = _stack.pop_back()
-	if next == null:
-		return
-
-	# The cell must not be already registered
-	if next in _rooms:
+	if next == null or next in _rooms:
 		return
 
 	# There are N% chance of giving up direction
@@ -106,15 +94,16 @@ func _visit_cell() -> void:
 	if _get_empty_cells(next).size() < 3:
 		return
 
+	# Map valid exits into the cells data
+	_map[next] = _get_doors(next)
+	for cell in _get_adjacent_cells(next):
+		if _get_cell(cell) == CELL_INVALID or _get_cell(cell) == CELL_EMPTY:
+			continue
+		_map[cell] = _get_doors(cell)
+
 	_push_neighbours(next)
 
-	# Map valid exits into the cells data
-	_map[next] = _get_exits(next)
-	for cell in _get_adjacent_cells(next):
-		if _map[cell] != CELL_EMPTY:
-			_map[cell] = _get_exits(cell)
-
-	_reseed_tries = 0
+	_fails_count = 0
 	_rooms.push_back(next) # Register as a valid room
 	step_completed.emit(_map.duplicate(), _rooms.duplicate())
 
@@ -127,8 +116,8 @@ func _push_neighbours(room: int) -> void:
 		if not _stack.is_empty() and randi() % 2 == 0:
 			continue
 
-		# Check if the cell have 3 adjacent empty cells
-		if _get_empty_cells(cell).size() != 3:
+		# Check if the neighbour has only 1 door
+		if not _has_one_door(cell):
 			continue
 
 		_stack.push_back(cell)
@@ -139,42 +128,43 @@ func _get_empty_cells(cell: int) -> Array[int]:
 	var walls: Array[int]
 
 	for wall in _get_adjacent_cells(cell):
-		if _map[wall] == CELL_EMPTY:
-			walls.append(wall)
+		if _get_cell(wall) != CELL_EMPTY:
+			continue
+
+		walls.append(wall)
 
 	return walls
 
 
 # Return a bitfield masking all doors of provided cell
-func _get_exits(idx: int) -> int:
-	var exits: int = CELL_VISITED
+func _get_doors(idx: int) -> int:
+	var doors: int = CELL_VISITED
 	var cells := _get_adjacent_cells(idx)
 	var pos := _get_position(idx)
 
 	for i in cells.size():
 		var cell := cells[i]
 
-		# Ignore empty cells
-		if _map[cell] == CELL_EMPTY:
+		# Ignore empty or invalid cells
+		if _get_cell(cell) == CELL_INVALID or _get_cell(cell) == CELL_EMPTY:
 			continue
 
 		var cell_pos := _get_position(cell)
 		if cell_pos.x < pos.x:
-			exits |= DOOR_LEFT
+			doors |= DOOR_LEFT
 		elif cell_pos.x > pos.x:
-			exits |= DOOR_RIGHT
+			doors |= DOOR_RIGHT
 		elif cell_pos.y < pos.y:
-			exits |= DOOR_UP
+			doors |= DOOR_UP
 		elif cell_pos.y > pos.y:
-			exits |= DOOR_DOWN
+			doors |= DOOR_DOWN
 
-	return exits
+	return doors
 
 
 # Get adjacent cells of provided cell. If 'diagonal' is true the function stores it too
 func _get_adjacent_cells(idx: int, diagonal: bool = false) -> Array[int]:
 	var cells: Array[int]
-	var map_area := Rect2i(0, 0, map_size.x - 1, map_size.y - 1)
 	var position := _get_position(idx) as Vector2i
 
 	for dx in range(-1, 2):
@@ -182,19 +172,26 @@ func _get_adjacent_cells(idx: int, diagonal: bool = false) -> Array[int]:
 			if dx == 0 and dy == 0:
 				continue
 
-			# If we are not searching diagonals, we just jump to next iteration
-			if not diagonal and abs(dx) == abs(dy):
+			# If we are not searching diagonals, we skip this iteration
+			if not diagonal and dx != 0 and dy != 0:
 				continue
 
-			var new_pos := position + Vector2i(dx, dy)
-			if not map_area.has_point(new_pos):
-				continue
-
-			var cell := _get_index(new_pos)
-			cells.append(cell)
-
+			var pos := position + Vector2i(dx, dy)
+			if pos.x < 0 or pos.y < 0 \
+			or pos.x >= map_size.x or pos.y >= map_size.y:
+				cells.append(-1)
+			else:
+				var cell := _get_index(position + Vector2i(dx, dy))
+				cells.append(cell)
 
 	return cells
+
+
+func _get_cell(idx: int) -> int:
+	if idx == -1:
+		return CELL_INVALID
+
+	return _map[idx]
 
 
 func _get_index(pos: Vector2i) -> int:
@@ -202,7 +199,6 @@ func _get_index(pos: Vector2i) -> int:
 
 	if idx < 0 or idx >= _map.size():
 		return -1
-
 	return idx
 
 
@@ -212,3 +208,10 @@ func _get_position(idx: int) -> Vector2:
 
 	@warning_ignore("integer_division")
 	return Vector2(idx % map_size.x, idx / map_size.x)
+
+
+func _has_one_door(cell: int) -> bool:
+	var doors := _get_doors(cell)
+	if doors == 0:
+		return false
+	return (doors & (doors - 1)) == 0
