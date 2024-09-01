@@ -1,9 +1,8 @@
 class_name MapGenerator
-extends Resource
+extends Node
 
 signal generation_finished(map: PackedInt32Array, rooms: PackedInt32Array)
 signal step_completed(map: PackedInt32Array, rooms: PackedInt32Array)
-
 
 # Room data
 enum {
@@ -18,6 +17,7 @@ enum {
 }
 
 const _GIVEUP_CHANCE := 0.3
+const _MAX_RESEED_TRIES := 4
 
 @export var map_size: Vector2i
 @export var max_rooms: int = 16
@@ -26,8 +26,40 @@ var _map: PackedInt32Array   # Array map with all tiles
 var _rooms: PackedInt32Array # Valid visited rooms
 var _stack: Array[int]
 
+var _is_generating := false
+var _stack_next := 0 # Next index in the 'rooms' array to push into stack
+var _reseed_tries: int = 0 # How many failed reseeds were tried
+var _start_cell: int # The cell where the generation starts
 
-func generate() -> void:
+func _process(_delta: float) -> void:
+	if not _is_generating:
+		return # Do nothing while we are not generating
+
+	# If the stack is empty, reseed a random registered cell or the
+	# start cell into stack
+	if _stack.is_empty():
+		if not _rooms.is_empty():
+			# Try to find next cell to continue iteration
+			_push_neighbours(_rooms[_stack_next])
+			_stack_next += 1
+			if _stack_next >= _rooms.size():
+				_stack_next = 0
+				_reseed_tries += 1
+		else:
+			_stack.push_back(_start_cell)
+
+	_visit_cell()
+
+	# Stop generation if we reach the maximum rooms count, or reached
+	# maximum reseed tries
+	if _rooms.size() >= max_rooms or _reseed_tries >= _MAX_RESEED_TRIES:
+		generation_finished.emit(_map.duplicate(), _rooms.duplicate())
+		_is_generating = false
+
+
+## Start the map generation process. This function does nothing while
+## generation is already being executed
+func start_generation() -> void:
 	if map_size.x == 0 or map_size.y == 0:
 		push_error("Invalid map size!")
 		return
@@ -36,40 +68,27 @@ func generate() -> void:
 		push_error("Invalid maximum number of rooms provided!")
 		return
 
+	if _is_generating:
+		return # Don't restart while generating
+
+	# Reset data
 	_map.resize(map_size.x * map_size.y)
-	var start := _get_index(Vector2i(
+	_map.fill(CELL_EMPTY)
+	_rooms.clear()
+	_stack.clear()
+
+	_is_generating = true
+	_stack_next = 0
+	_reseed_tries = 0
+	_start_cell = _get_index(Vector2i(
 		randi_range(1, map_size.x - 2),
 		randi_range(1, map_size.y - 2)
 	))
 
-	# Reset data
-	_stack.clear()
-	_rooms.clear()
-	_map.fill(CELL_EMPTY)
 
-	# Next index in the 'rooms' array to push into stack
-	var stack_next := 0
-
-	while _rooms.size() < max_rooms:
-		# If the stack is empty, push a random or start cell into stack
-		if _stack.is_empty():
-			if not _rooms.is_empty():
-				# Try to find next cell to continue iteration
-				_push_neighbours(_rooms[stack_next])
-				stack_next += 1
-				if stack_next >= _rooms.size():
-					stack_next = 0
-			else:
-				_stack.push_back(start)
-
-		_do_step()
-
-	generation_finished.emit(_map.duplicate(), _rooms.duplicate())
-
-
-# Visit room, add neighbour rooms to the stack, then register room
+# Visit cell, add neighbour rooms to the stack, then register room
 # as visited and store it
-func _do_step() -> void:
+func _visit_cell() -> void:
 	var next = _stack.pop_back()
 	if next == null:
 		return
@@ -95,6 +114,7 @@ func _do_step() -> void:
 		if _map[cell] != CELL_EMPTY:
 			_map[cell] = _get_exits(cell)
 
+	_reseed_tries = 0
 	_rooms.push_back(next) # Register as a valid room
 	step_completed.emit(_map.duplicate(), _rooms.duplicate())
 

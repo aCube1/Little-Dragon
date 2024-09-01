@@ -1,8 +1,6 @@
 extends Node2D
 
-@export var generator: MapGenerator
-
-var _chars := [
+const _chars := [
 	".",
 	"╸", # 0b0001
 	"╺", # 0b0010
@@ -21,6 +19,8 @@ var _chars := [
 	"╋", # 0b1111
 ]
 
+@onready var generator := $MapGenerator
+
 
 func _ready() -> void:
 	generator.connect("step_completed", _display_map)
@@ -32,7 +32,7 @@ func _ready() -> void:
 
 func _process(_dt: float) -> void:
 	if Input.is_action_just_pressed("ui_accept"):
-		generator.generate()
+		generator.start_generation()
 
 
 func _display_map(map: Array[int], _rooms: Array[int]) -> void:
@@ -48,5 +48,4 @@ func _display_map(map: Array[int], _rooms: Array[int]) -> void:
 		if i % generator.map_size.x == generator.map_size.x - 1:
 			text_map += "\n"
 
-	print("---")
-	print(text_map)
+	%MapRenderer.text = text_map
