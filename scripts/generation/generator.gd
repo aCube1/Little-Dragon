@@ -1,6 +1,10 @@
 class_name MapGenerator
 extends Resource
 
+signal generation_finished(map: PackedInt32Array, rooms: PackedInt32Array)
+signal step_completed(map: PackedInt32Array, rooms: PackedInt32Array)
+
+
 # Room data
 enum {
 	CELL_EMPTY = -1,
@@ -16,11 +20,10 @@ enum {
 const _GIVEUP_CHANCE := 0.3
 
 @export var map_size: Vector2i
-@export var max_rooms: int
+@export var max_rooms: int = 16
 
-var map: Array[int]   # Array map with all tiles
-var rooms: Array[int] # Valid visited rooms
-
+var _map: PackedInt32Array   # Array map with all tiles
+var _rooms: PackedInt32Array # Valid visited rooms
 var _stack: Array[int]
 
 
@@ -28,11 +31,12 @@ func generate() -> void:
 	if map_size.x == 0 or map_size.y == 0:
 		push_error("Invalid map size!")
 		return
+
 	if max_rooms <= 0 or max_rooms >= map_size.x * map_size.y:
 		push_error("Invalid maximum number of rooms provided!")
 		return
 
-	map.resize(map_size.x * map_size.y)
+	_map.resize(map_size.x * map_size.y)
 	var start := _get_index(Vector2i(
 		randi_range(1, map_size.x - 2),
 		randi_range(1, map_size.y - 2)
@@ -40,64 +44,82 @@ func generate() -> void:
 
 	# Reset data
 	_stack.clear()
-	rooms.clear()
-	map.fill(CELL_EMPTY)
+	_rooms.clear()
+	_map.fill(CELL_EMPTY)
 
-	while rooms.size() < max_rooms:
-		# If the stack is empty, verify if the start cells has walls, if it has,
-		# push it into stack, if not push a random cell
+	# Next index in the 'rooms' array to push into stack
+	var stack_next := 0
+
+	while _rooms.size() < max_rooms:
+		# If the stack is empty, push a random or start cell into stack
 		if _stack.is_empty():
-			if _get_walls(start).is_empty():
-				_stack.push_back(rooms.pick_random())
+			if not _rooms.is_empty():
+				# Try to find next cell to continue iteration
+				_push_neighbours(_rooms[stack_next])
+				stack_next += 1
+				if stack_next >= _rooms.size():
+					stack_next = 0
 			else:
 				_stack.push_back(start)
 
 		_do_step()
 
-	# Transverse map to remap valid exits into the IDs
-	for room in rooms:
-		map[room] = _get_exits(room)
+	generation_finished.emit(_map.duplicate(), _rooms.duplicate())
 
 
 # Visit room, add neighbour rooms to the stack, then register room
 # as visited and store it
 func _do_step() -> void:
-	var next: int = _stack.pop_back()
+	var next = _stack.pop_back()
+	if next == null:
+		return
+
+	# The cell must not be already registered
+	if next in _rooms:
+		return
 
 	# There are N% chance of giving up direction
 	if randf() <= _GIVEUP_CHANCE:
 		return
 
+	# If the wall has less than 3 adjacent empty cells, don't register it
+	# TODO: Generate bigger rooms
+	if _get_empty_cells(next).size() < 3:
+		return
+
 	_push_neighbours(next)
 
-	# Mark as visited
-	map[next] = CELL_VISITED
-	rooms.push_back(next)
+	# Map valid exits into the cells data
+	_map[next] = _get_exits(next)
+	for cell in _get_adjacent_cells(next):
+		if _map[cell] != CELL_EMPTY:
+			_map[cell] = _get_exits(cell)
+
+	_rooms.push_back(next) # Register as a valid room
+	step_completed.emit(_map.duplicate(), _rooms.duplicate())
 
 
 # Follow a set of rules and push all valid neighbours to the stack
 func _push_neighbours(room: int) -> void:
-	# TODO: Generate bigger rooms
-
 	# Get all adjacent empty cells
-	for cell in _get_walls(room):
-		# There are 50% of chance of not adding this cell
-		if randi() % 2 == 0:
+	for cell in _get_empty_cells(room):
+		# If stack is not empty, there is 50% of chance of not adding this cell
+		if not _stack.is_empty() and randi() % 2 == 0:
 			continue
 
 		# Check if the cell have 3 adjacent empty cells
-		if _get_walls(cell).size() != 3:
+		if _get_empty_cells(cell).size() != 3:
 			continue
 
 		_stack.push_back(cell)
 
 
 # Get all adjacent empty cells of provided cell
-func _get_walls(cell: int) -> Array[int]:
+func _get_empty_cells(cell: int) -> Array[int]:
 	var walls: Array[int]
 
 	for wall in _get_adjacent_cells(cell):
-		if map[wall] == CELL_EMPTY:
+		if _map[wall] == CELL_EMPTY:
 			walls.append(wall)
 
 	return walls
@@ -113,7 +135,7 @@ func _get_exits(idx: int) -> int:
 		var cell := cells[i]
 
 		# Ignore empty cells
-		if map[cell] == CELL_EMPTY:
+		if _map[cell] == CELL_EMPTY:
 			continue
 
 		var cell_pos := _get_position(cell)
@@ -158,14 +180,14 @@ func _get_adjacent_cells(idx: int, diagonal: bool = false) -> Array[int]:
 func _get_index(pos: Vector2i) -> int:
 	var idx := pos.x + map_size.x * pos.y
 
-	if idx < 0 or idx >= map.size():
+	if idx < 0 or idx >= _map.size():
 		return -1
 
 	return idx
 
 
 func _get_position(idx: int) -> Vector2:
-	if idx < 0 or idx >= map.size():
+	if idx < 0 or idx >= _map.size():
 		return Vector2.INF
 
 	@warning_ignore("integer_division")

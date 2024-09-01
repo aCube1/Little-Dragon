@@ -2,7 +2,7 @@ extends Node2D
 
 @export var generator: MapGenerator
 
-var _map := [
+var _chars := [
 	".",
 	"╸", # 0b0001
 	"╺", # 0b0010
@@ -22,25 +22,31 @@ var _map := [
 ]
 
 
+func _ready() -> void:
+	generator.connect("step_completed", _display_map)
+	generator.connect("generation_finished",
+		func(_map, _rooms):
+			print("FINISHED!")
+	)
+
+
 func _process(_dt: float) -> void:
 	if Input.is_action_just_pressed("ui_accept"):
-		_generate_map()
+		generator.generate()
 
 
-func _generate_map() -> void:
-	generator.generate()
-
-	var _text_map := ""
-	for i in generator.map.size():
-		var room := generator.map[i]
+func _display_map(map: Array[int], _rooms: Array[int]) -> void:
+	var text_map := ""
+	for i in map.size():
+		var room := map[i]
 
 		if room != generator.CELL_EMPTY:
-			_text_map += _map[room & generator.DOOR_MASK]
+			text_map += _chars[room & generator.DOOR_MASK]
 		else:
-			_text_map += "█"
+			text_map += "█"
 
 		if i % generator.map_size.x == generator.map_size.x - 1:
-			_text_map += "\n"
+			text_map += "\n"
 
 	print("---")
-	print(_text_map)
+	print(text_map)
