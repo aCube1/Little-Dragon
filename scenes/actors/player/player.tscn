@@ -2,11 +2,11 @@
 
 [ext_resource type="Script" path="res://scenes/actors/player/player.gd" id="1_xn4dn"]
 [ext_resource type="Texture2D" uid="uid://f81h57u1vqhp" path="res://assets/sprites/test.png" id="2_nsjek"]
-[ext_resource type="Script" path="res://scripts/components/movement_component.gd" id="3_ddbir"]
+[ext_resource type="Script" path="res://scripts/components/movement.gd" id="3_ddbir"]
 [ext_resource type="Script" path="res://scripts/state_machine.gd" id="3_f8k5p"]
-[ext_resource type="Script" path="res://scripts/components/player_controller.gd" id="3_xioh4"]
-[ext_resource type="Script" path="res://scripts/components/jump_component.gd" id="4_tyiwy"]
-[ext_resource type="Script" path="res://scripts/components/dash_component.gd" id="5_dwgrk"]
+[ext_resource type="Script" path="res://scripts/components/controllers/player.gd" id="3_qeofn"]
+[ext_resource type="Script" path="res://scripts/components/jump.gd" id="4_tyiwy"]
+[ext_resource type="Script" path="res://scripts/components/dash.gd" id="5_dwgrk"]
 [ext_resource type="Script" path="res://scripts/states/movement/on_idle.gd" id="6_ngji1"]
 [ext_resource type="Script" path="res://scripts/states/movement/on_walk.gd" id="7_wbyc1"]
 [ext_resource type="Script" path="res://scripts/states/movement/on_dash.gd" id="8_bqf0a"]
@@ -38,7 +38,7 @@ shape = SubResource("RectangleShape2D_14nni")
 sprite_frames = SubResource("SpriteFrames_eo4ny")
 
 [node name="PlayerController" type="Node" parent="."]
-script = ExtResource("3_xioh4")
+script = ExtResource("3_qeofn")
 
 [node name="JumpComponent" type="Node" parent="."]
 script = ExtResource("4_tyiwy")
